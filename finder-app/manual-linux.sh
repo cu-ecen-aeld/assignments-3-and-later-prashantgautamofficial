@@ -110,10 +110,18 @@ then
     cd busybox
     # Already checked out at ${BUSYBOX_VERSION} via --branch above (shallow clone).
     # TODO:  Configure busybox
-    make distclean
-    make defconfig
+    # Force fully non-interactive config: pass ARCH so defconfig resolves correctly,
+    # and pipe empty input so any stray prompt (e.g. from a stale .config) defaults
+    # through instead of hanging the CI job waiting on stdin.
+    make ARCH=${ARCH} distclean
+    yes "" | make ARCH=${ARCH} defconfig
 else
     cd busybox
+    # Directory already existed (e.g. persistent CI container from a prior run).
+    # Re-force a clean, non-interactive config so stale state can't cause the
+    # build to hang waiting on interactive prompts.
+    make ARCH=${ARCH} distclean
+    yes "" | make ARCH=${ARCH} defconfig
 fi
 
 # TODO: Make and install busybox
