@@ -35,13 +35,14 @@ if [ ! -d "${OUTDIR}/linux-stable" ]; then
 	echo "CLONING GIT LINUX STABLE VERSION ${KERNEL_VERSION} IN ${OUTDIR}"
 	CLONE_OK=0
 	for attempt in 1 2 3; do
+		echo "Kernel clone attempt ${attempt} of 3..."
 		if git clone ${KERNEL_REPO} --depth 1 --single-branch --branch ${KERNEL_VERSION}; then
 			CLONE_OK=1
 			break
 		fi
-		echo "Kernel clone attempt ${attempt} failed, retrying in 5s..."
+		echo "Kernel clone attempt ${attempt} failed, retrying in $((10 * attempt))s..."
 		rm -rf "${OUTDIR}/linux-stable"
-		sleep 5
+		sleep $((10 * attempt))
 	done
 	if [ "${CLONE_OK}" -ne 1 ]; then
 		echo "ERROR: failed to clone kernel repo (${KERNEL_REPO}) after 3 attempts"
@@ -93,20 +94,21 @@ if [ ! -d "${OUTDIR}/busybox" ]
 then
 	BUSYBOX_CLONE_OK=0
 	for attempt in 1 2 3; do
-		if git clone https://git.busybox.net/busybox; then
+		echo "Busybox clone attempt ${attempt} of 3..."
+		if git clone --depth 1 --branch ${BUSYBOX_VERSION} https://git.busybox.net/busybox; then
 			BUSYBOX_CLONE_OK=1
 			break
 		fi
-		echo "Busybox clone attempt ${attempt} failed, retrying in 5s..."
+		echo "Busybox clone attempt ${attempt} failed, retrying in $((10 * attempt))s..."
 		rm -rf "${OUTDIR}/busybox"
-		sleep 5
+		sleep $((10 * attempt))
 	done
 	if [ "${BUSYBOX_CLONE_OK}" -ne 1 ]; then
 		echo "ERROR: failed to clone busybox repo after 3 attempts"
 		exit 1
 	fi
     cd busybox
-    git checkout ${BUSYBOX_VERSION}
+    # Already checked out at ${BUSYBOX_VERSION} via --branch above (shallow clone).
     # TODO:  Configure busybox
     make distclean
     make defconfig
