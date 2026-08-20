@@ -93,9 +93,12 @@ cd "$OUTDIR"
 if [ ! -d "${OUTDIR}/busybox" ]
 then
 	BUSYBOX_CLONE_OK=0
+	BUSYBOX_PRIMARY_REPO=https://git.busybox.net/busybox
+	BUSYBOX_MIRROR_REPO=https://github.com/mirror/busybox
+
 	for attempt in 1 2 3; do
-		echo "Busybox clone attempt ${attempt} of 3..."
-		if git clone --depth 1 --branch ${BUSYBOX_VERSION} https://git.busybox.net/busybox; then
+		echo "Busybox clone attempt ${attempt} of 3 (primary: ${BUSYBOX_PRIMARY_REPO})..."
+		if git clone --depth 1 --branch ${BUSYBOX_VERSION} ${BUSYBOX_PRIMARY_REPO}; then
 			BUSYBOX_CLONE_OK=1
 			break
 		fi
@@ -103,8 +106,16 @@ then
 		rm -rf "${OUTDIR}/busybox"
 		sleep $((10 * attempt))
 	done
+
 	if [ "${BUSYBOX_CLONE_OK}" -ne 1 ]; then
-		echo "ERROR: failed to clone busybox repo after 3 attempts"
+		echo "Primary busybox repo unavailable after 3 attempts, trying GitHub mirror (${BUSYBOX_MIRROR_REPO})..."
+		if git clone --depth 1 --branch ${BUSYBOX_VERSION} ${BUSYBOX_MIRROR_REPO} busybox; then
+			BUSYBOX_CLONE_OK=1
+		fi
+	fi
+
+	if [ "${BUSYBOX_CLONE_OK}" -ne 1 ]; then
+		echo "ERROR: failed to clone busybox repo from both primary and mirror sources"
 		exit 1
 	fi
     cd busybox
