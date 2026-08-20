@@ -125,12 +125,22 @@ else
 fi
 
 # TODO: Make and install busybox
-make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE}
+echo "Building busybox..."
+make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} 2>&1 | tee /tmp/busybox_build.log
+
+if [ ! -f "busybox" ]; then
+	echo "ERROR: busybox binary was not produced by the build step."
+	echo "Last 50 lines of build output:"
+	tail -50 /tmp/busybox_build.log
+	exit 1
+fi
+echo "busybox binary built successfully: $(ls -la busybox)"
+
 make CONFIG_PREFIX=${OUTDIR}/rootfs ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} install
 
 echo "Library dependencies"
-${CROSS_COMPILE}readelf -a bin/busybox | grep "program interpreter"
-${CROSS_COMPILE}readelf -a bin/busybox | grep "Shared library"
+${CROSS_COMPILE}readelf -a busybox | grep "program interpreter"
+${CROSS_COMPILE}readelf -a busybox | grep "Shared library"
 
 # TODO: Add library dependencies to rootfs
 SYSROOT=$(${CROSS_COMPILE}gcc -print-sysroot)
